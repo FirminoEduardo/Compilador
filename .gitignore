@@ -1,0 +1,76 @@
+# ==========================
+# MAVEN
+# ==========================
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Arquivos de lock que o Maven pode gerar com alguns plugins
+dependency-reduced-pom.xml
+release.properties
+
+# ==========================
+# IDEs
+# ==========================
+
+# IntelliJ IDEA
+.idea/
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# ==========================
+# SISTEMA OPERACIONAL
+# ==========================
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ==========================
+# TEMPORÁRIOS / LOGS
+# ==========================
+*.log
+*.tmp
+*.swp
+*.bak
+*.old
+
+# ==========================
+# BUILD DE OUTRAS FERRAMENTAS
+# ==========================
+build/
+out/
+!**/src/main/**/build/
+!**/src/test/**/build/
