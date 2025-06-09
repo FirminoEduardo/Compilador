@@ -2,6 +2,7 @@ package main;
 
 import lexer.Lexer;
 import lexer.Token;
+import parser.ParserImpl;
 
 import java.util.List;
 
@@ -16,16 +17,19 @@ public class Main {
             functions
             funcType integer: soma(x, y) {
                 return x + y;
-            } endFunction;
+            }
+            endFunction;
             endFunctions
             endProgram
         """;
 
-        Lexer lexer = new Lexer(code);
-        List<Token> tokens = lexer.tokenize();
-
-        for (Token token : tokens) {
-            System.out.println(token);
+        try {
+            Lexer lexer = new Lexer(code);
+            ParserImpl parser = new ParserImpl(lexer);
+            parser.parseFileProgram();
+            System.out.println("✔ Código sintaticamente correto!");
+        } catch (RuntimeException e) {
+            System.err.println("✖ Erro: " + e.getMessage());
         }
     }
 }

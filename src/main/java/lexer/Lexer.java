@@ -7,6 +7,9 @@ public class Lexer {
     private final String input;
     private int position = 0;
 
+    private List<Token> tokens = null;
+    private int currentIndex = 0;
+
     public Lexer(String input) {
         this.input = input;
     }
@@ -234,4 +237,16 @@ public class Lexer {
     private void advance(int steps) {
         position += steps;
     }
+
+    // Retorna um token por vez (para o Parser)
+    public Token nextToken() {
+        if (tokens == null) {
+            tokens = tokenize();
+        }
+        if (currentIndex < tokens.size()) {
+            return tokens.get(currentIndex++);
+        }
+        return new Token(TokenType.EOF, "");
+    }
+
 }
