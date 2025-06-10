@@ -3,14 +3,18 @@ package parser;
 import lexer.Lexer;
 import lexer.Token;
 import lexer.TokenType;
+import symboltable.SymbolTable;
+import symboltable.SymbolTable.SymbolType;
 
 public class ParserImpl {
 
     private final Lexer lexer;
     private Token currentToken;
+    private final SymbolTable symbolTable;
 
     public ParserImpl(Lexer lexer) {
         this.lexer = lexer;
+        this.symbolTable = new SymbolTable();
         this.currentToken = lexer.nextToken();
     }
 
@@ -23,20 +27,21 @@ public class ParserImpl {
     }
 
     public void parseFileProgram() {
-        eat(TokenType.PROGRAM);                   // "program"
-        eat(TokenType.IDENTIFIER);                // programName
-        eat(TokenType.DECLARATIONS);              // "declarations"
-        parseDeclarationList();                   // DeclarationList
-        eat(TokenType.END_DECLARATIONS);          // "endDeclararions"
+        eat(TokenType.PROGRAM);
+        eat(TokenType.IDENTIFIER);
+        eat(TokenType.DECLARATIONS);
+        parseDeclarationList();
+        eat(TokenType.END_DECLARATIONS);
 
         if (currentToken.getType() == TokenType.FUNCTIONS) {
-            eat(TokenType.FUNCTIONS);             // "functions"
-            parseFunctionList();                  // FunctionList
-            eat(TokenType.END_FUNCTIONS);         // "endFunctions"
+            eat(TokenType.FUNCTIONS);
+            parseFunctionList();
+            eat(TokenType.END_FUNCTIONS);
         }
 
-        eat(TokenType.END_PROGRAM);               // "endProgram"
+        eat(TokenType.END_PROGRAM);
         System.out.println("Programa sintaticamente correto!");
+        symbolTable.printTable();
     }
 
     private void parseDeclarationList() {
@@ -49,9 +54,10 @@ public class ParserImpl {
 
     private void parseDeclarationVar() {
         eat(TokenType.VARTYPE);
+        TokenType type = currentToken.getType();
         parseTypeSpecification();
         eat(TokenType.COLON);
-        parseVariableList();
+        parseVariableList(type);
     }
 
     private void parseTypeSpecification() {
@@ -61,23 +67,30 @@ public class ParserImpl {
         }
     }
 
-    private void parseVariableList() {
-        eat(TokenType.IDENTIFIER);
+    private void parseVariableList(TokenType type) {
+        declareVariable(type);
         while (currentToken.getType() == TokenType.COMMA) {
             eat(TokenType.COMMA);
-            eat(TokenType.IDENTIFIER);
+            declareVariable(type);
         }
+    }
+
+    private void declareVariable(TokenType type) {
+        String name = currentToken.getLexeme();
+        eat(TokenType.IDENTIFIER);
+        if (symbolTable.exists(name)) {
+            throw new RuntimeException("Identificador já declarado: " + name);
+        }
+        symbolTable.declare(name, type.name(), SymbolType.VARIABLE);
     }
 
     private void parseFunctionList() {
         parseFunctionDeclaration();
         while (currentToken.getType() == TokenType.SEMICOLON) {
             eat(TokenType.SEMICOLON);
-
             if (currentToken.getType() == TokenType.FUNCTYPE) {
                 parseFunctionDeclaration();
             } else {
-                // Permite finalizar a lista após o último ponto e vírgula
                 break;
             }
         }
@@ -85,9 +98,16 @@ public class ParserImpl {
 
     private void parseFunctionDeclaration() {
         eat(TokenType.FUNCTYPE);
+        TokenType returnType = currentToken.getType();
         parseTypeSpecification();
         eat(TokenType.COLON);
-        eat(TokenType.IDENTIFIER); // functionName
+        String functionName = currentToken.getLexeme();
+        eat(TokenType.IDENTIFIER);
+        if (symbolTable.exists(functionName)) {
+            throw new RuntimeException("Função já declarada: " + functionName);
+        }
+        symbolTable.declare(functionName, returnType.name(), SymbolType.FUNCTION);
+
         eat(TokenType.LPAREN);
 
         if (currentToken.getType() != TokenType.RPAREN) {
@@ -96,14 +116,31 @@ public class ParserImpl {
 
         eat(TokenType.RPAREN);
         parseCommandBlock();
-        eat(TokenType.IDENTIFIER); // endFunction
+        eat(TokenType.IDENTIFIER);
     }
 
     private void parseParameterList() {
+        TokenType type = currentToken.getType();
+        parseTypeSpecification();
+        eat(TokenType.COLON);
+        String name = currentToken.getLexeme();
         eat(TokenType.IDENTIFIER);
+        if (symbolTable.exists(name)) {
+            throw new RuntimeException("Parâmetro já declarado: " + name);
+        }
+        symbolTable.declare(name, type.name(), SymbolType.PARAMETER);
+
         while (currentToken.getType() == TokenType.COMMA) {
             eat(TokenType.COMMA);
+            type = currentToken.getType();
+            parseTypeSpecification();
+            eat(TokenType.COLON);
+            name = currentToken.getLexeme();
             eat(TokenType.IDENTIFIER);
+            if (symbolTable.exists(name)) {
+                throw new RuntimeException("Parâmetro já declarado: " + name);
+            }
+            symbolTable.declare(name, type.name(), SymbolType.PARAMETER);
         }
     }
 
@@ -119,7 +156,7 @@ public class ParserImpl {
         switch (currentToken.getType()) {
             case RETURN -> {
                 eat(TokenType.RETURN);
-                parseExpression(); // simplificação por enquanto
+                parseExpression();
                 eat(TokenType.SEMICOLON);
             }
             case BREAK -> {
@@ -128,7 +165,7 @@ public class ParserImpl {
             }
             case PRINT -> {
                 eat(TokenType.PRINT);
-                parseExpression(); // simplificação por enquanto
+                parseExpression();
                 eat(TokenType.SEMICOLON);
             }
             case IF -> parseIfBlock();
@@ -140,7 +177,7 @@ public class ParserImpl {
     private void parseIfBlock() {
         eat(TokenType.IF);
         eat(TokenType.LPAREN);
-        parseExpression(); // condição
+        parseExpression();
         eat(TokenType.RPAREN);
         parseCommandBlock();
 
@@ -155,7 +192,7 @@ public class ParserImpl {
     private void parseWhileBlock() {
         eat(TokenType.WHILE);
         eat(TokenType.LPAREN);
-        parseExpression(); // condição
+        parseExpression();
         eat(TokenType.RPAREN);
         parseCommandBlock();
         eat(TokenType.ENDWHILE);
@@ -168,7 +205,7 @@ public class ParserImpl {
     private void parseAddExp() {
         parseTerm();
         while (currentToken.getType() == TokenType.ADD || currentToken.getType() == TokenType.SUB) {
-            eat(currentToken.getType()); // Consome + ou -
+            eat(currentToken.getType());
             parseTerm();
         }
     }
@@ -176,16 +213,21 @@ public class ParserImpl {
     private void parseTerm() {
         parseUnaryExp();
         while (currentToken.getType() == TokenType.MUL || currentToken.getType() == TokenType.DIV || currentToken.getType() == TokenType.MOD) {
-            eat(currentToken.getType()); // Consome *, / ou %
+            eat(currentToken.getType());
             parseUnaryExp();
         }
     }
 
     private void parseUnaryExp() {
         switch (currentToken.getType()) {
-            case IDENTIFIER, INT_CONST, REAL_CONST, STRING_CONST, CHAR_CONST, TRUE, FALSE ->
-                    eat(currentToken.getType());
-            case LPAREN -> { // expressão entre parênteses
+            case IDENTIFIER, INT_CONST, REAL_CONST, STRING_CONST, CHAR_CONST, TRUE, FALSE -> {
+                String name = currentToken.getLexeme();
+                if (currentToken.getType() == TokenType.IDENTIFIER && !symbolTable.exists(name)) {
+                    throw new RuntimeException("Identificador não declarado: " + name);
+                }
+                eat(currentToken.getType());
+            }
+            case LPAREN -> {
                 eat(TokenType.LPAREN);
                 parseExpression();
                 eat(TokenType.RPAREN);
@@ -193,65 +235,4 @@ public class ParserImpl {
             default -> throw new RuntimeException("Expressão inválida em: " + currentToken.getLexeme());
         }
     }
-
-    private void parseIfCommand() {
-        eat(TokenType.IF);
-        eat(TokenType.LPAREN);
-        parseExpression(); // condição
-        eat(TokenType.RPAREN);
-        parseCommandBlock();
-        if (currentToken.getType() == TokenType.ELSE) {
-            eat(TokenType.ELSE);
-            parseCommandBlock();
-        }
-        eat(TokenType.ENDIF);
-    }
-
-    private void parseWhileCommand() {
-        eat(TokenType.WHILE);
-        eat(TokenType.LPAREN);
-        parseExpression();
-        eat(TokenType.RPAREN);
-        parseCommandBlock();
-        eat(TokenType.ENDWHILE);
-    }
-
-    private void parseReturnCommand() {
-        eat(TokenType.RETURN);
-        parseExpression();
-        eat(TokenType.SEMICOLON);
-    }
-
-    private void parsePrintCommand() {
-        eat(TokenType.PRINT);
-        eat(TokenType.LPAREN);
-        parseExpression(); // ou apenas IDENTIFIER, dependendo da gramática
-        eat(TokenType.RPAREN);
-        eat(TokenType.SEMICOLON);
-    }
-
-    private void parseAssignmentOrCall() {
-        eat(TokenType.IDENTIFIER);
-        if (currentToken.getType() == TokenType.ASSIGN) {
-            eat(TokenType.ASSIGN);
-            parseExpression();
-            eat(TokenType.SEMICOLON);
-        } else if (currentToken.getType() == TokenType.LPAREN) {
-            // chamada de função
-            eat(TokenType.LPAREN);
-            if (currentToken.getType() != TokenType.RPAREN) {
-                parseExpression(); // Simples, pode ser expandido com múltiplos args
-                while (currentToken.getType() == TokenType.COMMA) {
-                    eat(TokenType.COMMA);
-                    parseExpression();
-                }
-            }
-            eat(TokenType.RPAREN);
-            eat(TokenType.SEMICOLON);
-        } else {
-            throw new RuntimeException("Esperado ':=' ou '(' após identificador.");
-        }
-    }
-
-
 }
