@@ -20,6 +20,24 @@ public class Lexer {
         while (position < input.length()) {
             char current = peek();
 
+            if (current == '/' && peekNext() == '/') {
+                // comentário de linha: descarta até o fim da linha
+                advance(2);
+                while (position < input.length() && peek() != '\n') {
+                    advance();
+                }
+                continue;
+            }
+            if (current == '/' && peekNext() == '*') {
+                // comentário de bloco: descarta até encontrar '*/'
+                advance(2);
+                while (position < input.length() && !(peek() == '*' && peekNext() == '/')) {
+                    advance();
+                }
+                advance(2);
+                continue;
+            }
+
             if (Character.isWhitespace(current)) {
                 advance();
                 continue;

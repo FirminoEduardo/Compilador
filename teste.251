@@ -1,0 +1,12 @@
+program Exemplo
+declarations
+varType integer: aVeryLongIdentifierNameThatExceedsLimit, b;
+varType real: x;
+endDeclararions
+functions
+funcType integer: soma(integer: p, real: q) {
+    // retorno simples
+    return p + q;
+} endFunction
+endFunctions
+endProgram

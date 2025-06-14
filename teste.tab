@@ -1,0 +1,7 @@
+Tabela de Símbolos:
+p : INTEGER (PARAMETER)
+q : REAL (PARAMETER)
+b : INTEGER (VARIABLE)
+soma : INTEGER (FUNCTION)
+aVeryLongIdentifierNameThatExceedsLimit : INTEGER (VARIABLE)
+x : REAL (VARIABLE)

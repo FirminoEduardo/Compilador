@@ -3,8 +3,13 @@ package parser;
 import lexer.Lexer;
 import lexer.Token;
 import lexer.TokenType;
+import symboltable.Symbol;
 import symboltable.SymbolTable;
 import symboltable.SymbolTable.SymbolType;
+
+import java.io.PrintWriter;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ParserImpl {
 
@@ -12,9 +17,9 @@ public class ParserImpl {
     private Token currentToken;
     private final SymbolTable symbolTable;
 
-    public ParserImpl(Lexer lexer) {
+    public ParserImpl(Lexer lexer, SymbolTable symbolTable) {
         this.lexer = lexer;
-        this.symbolTable = new SymbolTable();
+        this.symbolTable = symbolTable;
         this.currentToken = lexer.nextToken();
     }
 
@@ -45,24 +50,34 @@ public class ParserImpl {
     }
 
     private void parseDeclarationList() {
-        parseDeclarationVar();
-        while (currentToken.getType() == TokenType.SEMICOLON) {
-            eat(TokenType.SEMICOLON);
+        if (currentToken.getType() == TokenType.VARTYPE) {
             parseDeclarationVar();
+            while (currentToken.getType() == TokenType.SEMICOLON) {
+                eat(TokenType.SEMICOLON);
+                // somente entra se vier outro varType
+                if (currentToken.getType() != TokenType.VARTYPE) {
+                    break;
+                }
+                parseDeclarationVar();
+            }
         }
     }
 
     private void parseDeclarationVar() {
         eat(TokenType.VARTYPE);
-        TokenType type = currentToken.getType();
-        parseTypeSpecification();
+        TokenType type = parseTypeSpecification();
         eat(TokenType.COLON);
         parseVariableList(type);
     }
 
-    private void parseTypeSpecification() {
-        switch (currentToken.getType()) {
-            case REAL, INTEGER, STRING, BOOLEAN, CHARACTER, VOID -> eat(currentToken.getType());
+
+    private TokenType parseTypeSpecification() {
+        TokenType t = currentToken.getType();
+        switch (t) {
+            case REAL, INTEGER, STRING, BOOLEAN, CHARACTER, VOID -> {
+                eat(t);
+                return t;
+            }
             default -> throw new RuntimeException("Tipo inválido: " + currentToken.getLexeme());
         }
     }
@@ -235,4 +250,5 @@ public class ParserImpl {
             default -> throw new RuntimeException("Expressão inválida em: " + currentToken.getLexeme());
         }
     }
+
 }

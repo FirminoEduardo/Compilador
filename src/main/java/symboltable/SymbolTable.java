@@ -1,5 +1,7 @@
 package symboltable;
 
+import java.io.PrintWriter;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,7 +9,8 @@ public class SymbolTable {
 
     public enum SymbolType {
         VARIABLE,
-        FUNCTION
+        FUNCTION,
+        PARAMETER
     }
 
     public static class Symbol {
@@ -53,12 +56,21 @@ public class SymbolTable {
     public boolean exists(String name) {
         return symbols.containsKey(name);
     }
-
     public void printTable() {
         System.out.println("\nTabela de Símbolos:");
-        for (var entry : symbols.entrySet()) {
-            Symbol sym = entry.getValue();
-            System.out.printf("%s : %s (%s)\n", sym.getName(), sym.getDataType(), sym.getKind());
+        for (Symbol sym : getAllSymbols()) {
+            System.out.printf("%s : %s (%s)%n", sym.getName(), sym.getDataType(), sym.getKind());
         }
+    }
+
+    public void printTable(PrintWriter out) {
+        out.println("Tabela de Símbolos:");
+        for (Symbol sym : getAllSymbols()) {
+            out.printf("%s : %s (%s)%n", sym.getName(), sym.getDataType(), sym.getKind());
+        }
+    }
+
+    public Collection<Symbol> getAllSymbols() {
+        return symbols.values();
     }
 }
